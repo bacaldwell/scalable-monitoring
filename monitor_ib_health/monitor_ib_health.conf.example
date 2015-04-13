@@ -1,0 +1,49 @@
+####
+# /usr/local/etc/monitor_ib_health example
+####
+
+#   This is part of monitor_ib_health
+#
+#   Copyright 2015 Blake Caldwell, Dustin Leverman
+#   Oak Ridge National Laboratory
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# IB interfaces to check health of
+# Format: <host>:<HCA>:<Port>:<Speed>:<IS_SM>
+# Where <host> can be the full hostname (w/o domain)
+#   or a shortened name without the number at the end
+
+# the MDS is a subnet manager with a single FDR port
+mds:mlx4_0:1:56:SM
+
+# each OSS has two FDR cards (3 ports)
+oss1:mlx4_0:1:56
+oss1:mlx4_1:1:56
+oss1:mlx4_1:2:56
+oss2:mlx4_0:1:56
+oss2:mlx4_1:1:56
+oss2:mlx4_1:2:56
+oss3:mlx4_0:1:56
+oss3:mlx4_1:1:56
+oss3:mlx4_1:2:56
+oss4:mlx4_0:1:56
+oss4:mlx4_1:1:56
+oss4:mlx4_1:2:56
+
+# The above lines could be replaced by these two
+# that will match oss\d+
+oss:mlx4_0:1:56
+oss:mlx4_1:1:56

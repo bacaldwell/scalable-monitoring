@@ -1,0 +1,66 @@
+monitor_ib_health
+=====================================
+v1.0 April 13, 2015
+
+Copyright 2015 Blake Caldwell, Dustin Leverman
+Oak Ridge National Laboratory
+
+This program is licensed under GNU GPLv3. Full license in LICENSE
+=====================================
+
+The installation and use of this script is very simple:
+
+- Edit the included file monitor_ib_health.conf.example for your
+  use and place in
+  /usr/local/etc/monitor_ib_healt.conf
+- Run monitor_ib_health.sh. It will return an output string with
+  the health status of the configured IB interfaces. It is on a
+  single line for the purpose of using directly in Nagios. The
+  return codes correspond to Nagios codes (ok, warning, critical,
+  unknown).
+
+=====================================
+
+ Purpose: This script is a health check of IB interfaces on the system.
+    It runs the following checks for each interface matching this host
+    in the config file:
+
+    local_errors_check
+    remote_errors_check
+    pci_health_check
+    sm_lid_check
+    port_active_check
+    port_up_check
+    port_width_check
+    port_speed_check
+
+ Where/How/When: Run on command line to query status
+
+ Return Values:
+   Nagios return codes:
+   0 -> OK
+   1 -> Warning
+   2 -> Critical
+   3 -> Unknown
+
+ Expected Output: string suitable for Nagios paging:
+
+ Two interfaces with no errors:
+   mlx4_1-ib0:OK ;; mlx4_1-ib1:OK ;;
+
+ Two interfaces with IB errors (other end of link has flapped):
+   mlx4_1-ib0:WARNING - Direct-attached ddn-d-1 HCA-1 port 2: [LinkDownedCounter == 48] ;; \
+   mlx4_1-ib1:WARNING - Direct-attached ddn-d-0 HCA-1 port 2: [LinkDownedCounter == 66] ;;
+
+ Assumptions/Dependencies:
+
+   This script expects the config file to be placed at
+     /usr/local/etc/monitor_ib_health.sh
+   and to have a matching entry for this host (say oss4):
+     oss:mlx4_1:1:40
+
+   If node guids are to be mapped to names, populate this file
+     /usr/local/etc/ib_node_name_map.conf
+
+   The format is the following:
+      [GUID]      "simple name"
