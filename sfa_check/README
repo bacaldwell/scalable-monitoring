@@ -1,0 +1,201 @@
+sfa_check
+=====================================
+
+v1.0 April 14, 2015
+
+Copyright 2015 Blake Caldwell
+Oak Ridge National Laboratory
+
+This program is licensed under GNU GPLv3. Copy of license in LICENSE
+=====================================
+
+sfa_check is a set of python scripts to monitor the health of DDN storage arrays via the
+DDN API. It coordinates the checking of multiple storage array couplets from a management
+server that spawns checks of the arrays in parallels, but batched at a configurable 
+interval. In this way, Nagios can poll the management server, and it will immediately
+return the most recent results.
+
+It can also be run in non-batch mode from the command line with a list of controllers
+to check specified as an argument or in a configuration file.
+
+For an overview of the components in sfa_check, please see the included diagram 
+in doc/sfa_check.pdf
+
+==========================
+Prerequisites
+==========================
+
+The DDN SFA API python modules must be installed on the management server. Please
+contact DDN support for this. After installing the command below should load the
+module.
+
+$ python
+Python 2.6.6 (r266:84292, Nov 21 2013, 10:50:32)
+[GCC 4.4.7 20120313 (Red Hat 4.4.7-4)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import ddn
+>>>
+
+Python 2.6 (For python 2.4, modify the shebang line in the scripts to use the
+2.4 binary)
+
+SNMP packages on the management server. Tested with the following Net-SNMP rpms:
+net-snmp-libs-5.5-49.el6_5.1.x86_64
+net-snmp-utils-5.5-49.el6_5.1.x86_64
+net-snmp-5.5-49.el6_5.1.x86_64
+
+snmp-passpersist python module:
+https://pypi.python.org/pypi/snmp-passpersist
+
+==========================
+Installation
+==========================
+
+On the management server:
+------------------------
+Install the DDN SFA python modules
+
+Copy the configuration file example to /usr/local/etc/sfa_check.conf and modify it
+as needed.
+
+sudo cp sfa_check.conf.example /usr/local/etc/sfa_check.conf
+
+Add the following line to snmpd configuration on the management server
+ (e.g. /etc/snmp/snmpd.local.conf)
+
+pass_persist .1.3.6.1.4.1.341.49.1 /usr/local/bin/sfa_check_pp_daemon.py
+
+This will start the daemon when there is an snmp query (from the Nagios
+host at the OID specified).
+
+
+On the Nagios server:
+---------------------
+Copy check_snmp_sfa.py into the directory used for Nagios plugins
+
+cp check_snmp_sfa.py /usr/lib64/nagios/plugins/
+
+Modify the Nagios server config to run checks using check_snmp_sfa.py script as
+described in the "Nagios configuration" section of this file.
+
+Make sure snmp from the Nagios server to the management server has the
+effect expected of starting the sfa_check_pp_daemon process.
+
+$ snmpwalk -v2c –c public monitor_host .1.3.6.1.4.1.341.49.1
+SNMPv2-SMI::enterprises.341.49.1.12.97...98.49.1 = INTEGER: 0
+SNMPv2-SMI::enterprises.341.49.1.12.97...98.49.2 = STRING: "All Checks OK"
+SNMPv2-SMI::enterprises.341.49.1.12.97...98.49.3 = STRING: "1424574807"
+
+==========================
+Usage
+==========================
+
+Command-line usage example of sfa_check:
+
+$ /usr/local/bin/sfa_check.py test-ddn1a
+All Checks OK
+
+$ /usr/local/bin/sfa_check.py -x ddn-a ddn-b
+ddn_a Check Summary:
+-------------------------
+Messages from check POOL
+Messages from check VIRTUAL DISK
+VIRTUAL DISK: 2 Checks WARNING
+VIRTUAL DISK Health: OK  Index: 37; Child Health: NON_CRITICAL
+VIRTUAL DISK Health: OK  Index: 53; Child Health: NON_CRITICAL
+
+POOL: 2 Checks WARNING
+POOL Health: NON_CRITICAL  Index: 37 
+POOL Health: NON_CRITICAL  Index: 53 
+
+ddn_b Check Summary:
+-------------------------
+All Checks OK
+
+
+$ ./sfa_check.py --help
+usage: sfa_check.py [-h] [-m mod [mod ...]] [--production PRODUCTION]
+                    [-n NPROCS] [-c CONFIG] [-p PASSWORD] [-u USERNAME] [-x]
+                    [-v] [-q]
+                    [conA,conB [conA,conB ...]]
+
+positional arguments:
+  conA,conB             List of subsystems to run the health check on.
+                        Alternate controllers are comma-separated
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m mod [mod ...], --modules mod [mod ...]
+                        list check modules to run on the hosts
+  --production PRODUCTION
+                        Specific production subsystems to run all pool
+                        settings checks
+  -n NPROCS, --nprocs NPROCS
+                        Max number of worker processes (for each subsystem)
+  -c CONFIG, --config CONFIG
+                        Path to configuration file
+  -p PASSWORD, --password PASSWORD
+                        API password
+  -u USERNAME, --username USERNAME
+                        API username
+  -x, --extended        Extended output mode for running from console (implies
+                        -q)
+  -v, --verbose         Be verbose
+  -q, --quiet           Redirect stderr to /dev/null
+
+
+
+$ ./check_snmp_sfa.py --help
+Usage: check_snmp_sfa.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -v, --verbose         Be verbose
+  -C COMMUNITY, --community=COMMUNITY
+                        community name
+  -H HOSTNAME, --hostname=HOSTNAME
+                        Name or IP address of specific host to check
+  --controller=CONTROLLER
+                        Name of controllers to check
+  -P PORT, --port=PORT  SNMP Port. Default is 161
+  -V VERSION, --version=VERSION
+                        Chooses version number. e.g. 1, 2c, 3
+
+==========================
+SNMPD pass persist config:
+==========================
+This script gets instantiated by the snmpd process on the management server
+
+sfa_check_pp_daemon.pp has a few configuration parameters that may need to be customized.
+These are the defaults:
+
+POLLING_INTERVAL=300    # Update timer, in second
+MAX_RETRY=10    # Number of successive retries in case of error
+OID_BASE=".1.3.6.1.4.1.341.49.1"
+
+config_file = "/usr/local/etc/sfa_check.conf"
+
+==========================
+Nagios configuration:
+==========================
+
+Since the controller doesn't run the sfa_check directly, we want Nagios to poll the management
+server passed as "$ARG1$" to the command using the line check_snmp_sfa![MANGAGEMENT SERVER]
+
+The host_name parameter will be a comma-separated list of the couplets that you have configured
+as hosts in Nagios.
+
+services.cfg:
+define service {
+  service_description            SFA_CHECK
+  host_name                      [DDN SFA Name]
+  check_command                  check_snmp_sfa![MANGAGEMENT SERVER]
+}
+
+commands.cfg:
+define command {
+  command_name                   check_snmp_sfa
+  command_line                   /usr/lib64/nagios/check_snmp_sfa.py --controller $HOSTNAME$ -C [COMMUNITY STRING] -H '$ARG1$'
+}
+
+
