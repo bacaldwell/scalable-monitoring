@@ -55,7 +55,7 @@ The installation and use of this script is very simple:
  Assumptions/Dependencies:
 
    This script expects the config file to be placed at
-     /usr/local/etc/monitor_ib_health.sh
+     /usr/local/etc/monitor_ib_health.conf
    and to have a matching entry for this host (say oss4):
      oss:mlx4_1:1:40
 
