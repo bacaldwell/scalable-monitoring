@@ -25,7 +25,7 @@
 """
 
 import snmp_passpersist as snmp
-import ornl_sfa_check as sfaCheck
+import sfa_check as sfaCheck
 import syslog, sys, time, errno, re, socket, os
 
 # General stuff
